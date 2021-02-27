@@ -1,0 +1,82 @@
+---
+- hosts: goservers-{{ HGROUP }}
+  remote_user: sdev
+  become: true
+  serial: 1
+
+  tasks:
+    - name: create dirs
+      file:
+        path: "{{ item }}"
+        state: directory
+        recurse: yes
+        owner: sdev
+        group: sdev
+        mode: 0755
+      with_items:
+      - ["/data/goserver", "/data/log/{{ PROGRAM }}_logs"]
+
+    - name: backup
+      args:
+        chdir: /data/goserver
+      shell: |
+        if [ "{{ MODE }}" = "grayscale" ]; then
+          if [ ! -f {{ PROGRAM }}_server.grayscale -a -f {{ PROGRAM }}_server ]; then
+            /usr/bin/cp -pf {{ PROGRAM }}_server {{ PROGRAM }}_server.grayscale
+            /usr/bin/cp -pf {{ PROGRAM }}.toml {{ PROGRAM }}.toml.grayscale
+          fi
+        else
+          if [ -f {{ PROGRAM }}_server.grayscale ]; then
+            /usr/bin/mv -f {{ PROGRAM }}_server.grayscale {{ PROGRAM }}_server.full
+            /usr/bin/mv -f {{ PROGRAM }}.toml.grayscale {{ PROGRAM }}.toml.full
+          elif [ -f {{ PROGRAM }}_server ]; then
+            /usr/bin/cp -pf {{ PROGRAM }}_server {{ PROGRAM }}_server.full
+            /usr/bin/cp -pf {{ PROGRAM }}.toml {{ PROGRAM }}.toml.full
+          fi
+        fi
+
+    - name: copy server
+      args:
+        chdir: /data/goserver
+      shell: |
+        rsync -aq rsync://{{ BHOST }}/build/goserver_src/goserver/src/{{ PROGRAM }}_server/{{ PROGRAM }}_server {{ PROGRAM }}_server
+        chown sdev:sdev {{ PROGRAM }}_server
+        chmod 755 {{ PROGRAM }}_server
+
+    - name: copy config
+      args:
+        chdir: /data/goserver
+      shell: |
+        rsync -aq rsync://{{ BHOST }}/build/goserver_src/goserver/src/{{ PROGRAM }}_server/{{ PROGRAM }}-{{ ENV }}.toml {{ PROGRAM }}.toml
+        chown sdev:sdev {{ PROGRAM }}.toml
+        chmod 755 {{ PROGRAM }}.toml
+        if [ "{{ PROGRAM }}" = "gateway" -o "{{ PROGRAM }}" = "api" ]; then
+          if [ "{{ inventory_hostname }}" = "172.50.7.208" ]; then
+            sed -i -e "s/^server_id.*/server_id=2/g" {{ PROGRAM }}.toml
+          elif [ "{{ inventory_hostname }}" = "172.50.7.52" ]; then
+            sed -i -e "s/^server_id.*/server_id=3/g" {{ PROGRAM }}.toml
+          fi
+        elif [ "{{ PROGRAM }}" = "risk" ]; then
+          rsync -aq rsync://{{ BHOST }}/build/goserver_src/goserver/src/{{ PROGRAM }}_server/resource ./
+        fi
+
+    - name: copy service
+      copy:
+        src: "{{ WSPACE }}/goserver/devops/services/{{ PROGRAM }}.service"
+        dest: /lib/systemd/system/{{ PROGRAM }}.service
+        mode: 0644
+        force: yes
+
+    - name: daemon reload
+      shell: |
+        systemctl daemon-reload
+        systemctl enable {{ PROGRAM }}
+
+    - name: restart service
+      service: name={{ PROGRAM }} state=restarted enabled=yes
+
+    - name: wait for 5 seconds
+      shell: |
+        if [ "{{ MODE }}" = "full" ]; then
+          sleep 5
+        fi

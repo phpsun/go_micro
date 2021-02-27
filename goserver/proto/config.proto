@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+import "base.proto";
+
+package config;
+option go_package = "common/proto/config";
+
+message ConfRegions {
+    int64 id = 1;
+    string name = 2;
+    string title = 3;
+    int64 parent_id = 4;
+    float lat = 5;
+    float lng = 6;
+    int64 order_num = 7;
+    int64 is_show = 8;
+    string geo_pos = 9;
+}
+
+/*
+*  GET api/conf/info 获取地区下级
+*/
+message InfoReq {
+   int64 id = 1;//地区id
+}
+message InfoResp {
+   ConfRegions regions = 1;//地区信息
+}
+
+service Config {
+    rpc Ping (base.Empty) returns (base.Empty) {}
+    rpc Info(InfoReq) returns (InfoResp) {}
+}

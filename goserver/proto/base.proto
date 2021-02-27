@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package base;
+option go_package="common/proto/base";
+
+message Empty {
+}
+
+message ClientInfo {
+    int64  user_id = 1;
+    string client_id = 2;
+    string client_ip = 3;
+    string domain = 4;//域名：www.baidu.com
+}

@@ -1,0 +1,21 @@
+---
+- hosts: goservers-{{ ENV }}
+  remote_user: "{{ USER }}"
+  become: true
+  serial: 1
+
+  tasks:
+    - name: rsync codes
+      synchronize:
+        src: "{{ WSPACE }}/goserver/"
+        dest: /data/shop_goserver
+        dirs: yes
+        mode: push
+        rsync_opts:
+          - "--exclude=.git*"
+          - "--delete"
+
+    - name: execute cmds
+      shell: |
+        chmod 755 /data/shop_goserver/devops/install/start_test.sh
+        /data/shop_goserver/devops/install/start_test.sh {{ ENV }}

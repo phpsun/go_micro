@@ -1,0 +1,14 @@
+.idea
+.DS_Store
+**/.idea
+**/.vscode
+__pycache__/
+docs/
+/pkg
+**/api_server/api_server
+**/mail_server/mail_server
+**/sms_server/sms_server
+**/user_server/user_server
+**/internal_server/internal_server
+**/config_server/config_server
+**/cj-dev.toml

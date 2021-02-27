@@ -1,0 +1,34 @@
+---
+- hosts: goservers-{{ ENV }}
+  remote_user: sdev
+  become: true
+  serial: 1
+
+  tasks:
+    - name: restore
+      args:
+        chdir: /data/goserver
+      shell: |
+        if [ "{{ MODE }}" = "grayscale" ]; then
+          if [ -f {{ PROGRAM }}_server.grayscale ]; then
+            rsync -aq {{ PROGRAM }}_server.grayscale {{ PROGRAM }}_server
+            mv -f {{ PROGRAM }}.toml.grayscale {{ PROGRAM }}.toml
+            rm -f {{ PROGRAM }}_server.grayscale
+          else
+            echo "RESTORE ERROR"
+            exit 1
+          fi
+        else
+          if [ -f {{ PROGRAM }}_server.full ]; then
+            rsync -aq {{ PROGRAM }}_server.full {{ PROGRAM }}_server
+            mv -f {{ PROGRAM }}.toml.full {{ PROGRAM }}.toml
+            rm -f {{ PROGRAM }}_server.full
+            rm -f {{ PROGRAM }}_server.grayscale {{ PROGRAM }}.toml.grayscale
+          else
+            echo "RESTORE ERROR"
+            exit 1
+          fi
+        fi
+
+    - name: restart service
+      service: name={{ PROGRAM }} state=restarted enabled=yes

@@ -1,0 +1,24 @@
+[Unit]
+Description=config server
+After=network.target
+
+[Service]
+User=sdev
+Group=sdev
+
+LimitCORE=infinity
+LimitNOFILE=1048576
+LimitNPROC=1048576
+
+WorkingDirectory=/data/goserver
+ExecStart=/data/goserver/config_server --config /data/goserver/config.toml
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=always
+RestartSec=1s
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=goserver_stdout
+
+[Install]
+WantedBy=multi-user.target

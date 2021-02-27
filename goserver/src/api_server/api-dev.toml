@@ -1,0 +1,25 @@
+etcd = ["http://127.0.0.1:2379"]
+server_host="0.0.0.0:8801"
+server_id=1
+env = "micro_dev"
+
+[Log]
+debug=true
+filenum=20
+filesize=256
+filename="run"
+level="INFO"
+dir="/data/go_micro/api_logs"
+
+[Redis]
+addrs     = ["127.0.0.1:6379"]
+pwd       = ""
+pool_size = 100
+
+[Db]
+addr           = "127.0.0.1:3306"
+user           = "root"
+pwd            = ""
+dbname         = "test"
+max_open_conns = 10
+max_idle_conns = 10

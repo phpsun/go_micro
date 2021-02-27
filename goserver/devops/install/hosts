@@ -1,0 +1,7 @@
+[goservers-prod]
+
+[goservers-test]
+127.0.0.1
+
+[goservers-dev]
+127.0.0.1
